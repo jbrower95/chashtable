@@ -145,6 +145,9 @@ void *hashtable_get(hashtable_t *table, char *key) {
  * Returns true if the item was removed, o.w false if it wasn't in the hashtable.
  */
 bool hashtable_remove(hashtable_t *table, char *key) {
+    
+    hashtable_resize_if_necessary(table);
+    
     if (key == NULL) {
         return NULL;
     }
@@ -180,10 +183,43 @@ bool hashtable_remove(hashtable_t *table, char *key) {
     }
 }
 
+void hashtable_resize(hashtable_t *table, int new_size) {
+    
+    /* Resize the internal array to new_size */
+    bucket_t **original_array = table->buckets;
+    int old_size = table->size;
+    
+    /* Reset the attributes of this table to new stuff */
+    table->buckets = (bucket_t **)malloc(sizeof(bucket_t) * new_size);
+    table->size = new_size;
+    table->count = 0;
+    
+    /* Re insert all of the existing buckets */
+    for (int i = 0; i < old_size; i++) {
+        bucket_t *current = original_array[i];
+        if (current != NULL) {
+            /* Insert all of the values in these buckets. */
+            do {
+                printf("Inserting (%s, %d)\n", current->key, current->datum);
+                hashtable_put(table, current->key, current->datum);
+                bucket_t *next = current->next;
+                 bucket_destroy(current);
+                current = next;
+            } while (current != NULL);
+        }
+    }
+    
+    /* Free our original representation */
+    free(original_array);
+}
+
 /**
  * Inserts a value into the hashtable.
  */
 void hashtable_put(hashtable_t *table, char *key, void *value) {
+    
+    hashtable_resize_if_necessary(table);
+    
     if (key == NULL) {
         return;
     }
@@ -212,6 +248,24 @@ void hashtable_put(hashtable_t *table, char *key, void *value) {
     
     table->count++;
 }
+
+
+void hashtable_resize_if_necessary(hashtable_t *table) {
+    
+    float load_factor = table->count / (float)table->size;
+    
+    if (load_factor > MAX_LOAD_FACTOR) {
+        // We need to ~grow~. Double our size.
+        printf("Growing hash table from %d to %d.", table->size, table->size*2);
+        hashtable_resize(table, table->size * 2);
+    } else if (load_factor < MIN_LOAD_FACTOR && table->size > MIN_SIZE) {
+        // We need to ~shrink~. Half our size.
+        int new_size = (table->size / 2) < MIN_SIZE ? MIN_SIZE : (table->size / 2);
+        printf("Shrinking hash table from %d to %d\n.", table->size, new_size);
+        hashtable_resize(table, new_size);
+    }
+}
+
 
 /* Returns the number of K,V pairs in the hashtable. */
 int hashtable_size(hashtable_t *table) {

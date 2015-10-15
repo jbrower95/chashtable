@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     printf("\tSimple size re-verification: %s", get_truth(hashtable_size(table) == 4));
     printf("\tRemove verification: %s", get_truth(hashtable_remove(table, "justin")));
     printf("\tRemove size verification: %s", get_truth(hashtable_size(table) == 3));
-    printf("\Multiple remove\n");
+    printf("\tMultiple remove\n");
     
     hashtable_remove(table, "anjali");
     hashtable_remove(table, "emily");
@@ -41,8 +41,6 @@ int main(int argc, char *argv[]) {
     printf("\t\t Actually removed?: %s", get_truth(hashtable_get(table, "anjali") == NULL));
     printf("\t\t Actually removed?: %s", get_truth(hashtable_get(table, "emily") == NULL));
     printf("\t\t Actually removed?: %s", get_truth(hashtable_get(table, "yo") == NULL));
-    
-    
 }
 
 const char *true_string = "true\n";
