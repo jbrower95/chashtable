@@ -1,0 +1,6 @@
+This is a simple chaining hashtable implementation.
+
+To run tests, run
+
+make tests
+./tests
