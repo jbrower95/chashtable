@@ -42,9 +42,17 @@ typedef struct hashtable {
 hashtable_t *hashtable_new(size_t initial_size);
 void hashtable_destroy(hashtable_t *table);
 
+/* Returns the data stored at that key in the table. NULL if non-existent or error.*/
 void *hashtable_get(hashtable_t *table, char *key);
+
+/* Stores a key,value pair or overwrites. Returns true upon success, otherwise false. */
+// False indiciates an out of memory error.
 bool hashtable_put(hashtable_t *table, char *key, void *value);
+
+/* Removes an item from the hashtable. Returns true if the item was found and removed. */
 bool hashtable_remove(hashtable_t *table, char *key);
+
+/* Returns the number of key value pairs in the hashtable. */
 int hashtable_size(hashtable_t *table);
 
 #endif /* hashtable_h */
