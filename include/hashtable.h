@@ -12,8 +12,8 @@
 #include <stdbool.h>
 
 #define MIN_SIZE 8
-#define MIN_LOAD_FACTOR .05
-#define MAX_LOAD_FACTOR .95
+#define MIN_LOAD_FACTOR .1
+#define MAX_LOAD_FACTOR .8
 
 /* A bucket in the hashtable -- stores a datum and forms a linked list.*/
 typedef struct bucket {

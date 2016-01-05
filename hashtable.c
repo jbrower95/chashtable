@@ -2,13 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "hashtable.h"
+#include "include/hashtable.h"
 /* *
  * A simple implementation of a chaining hashtable.
  * Used for holding pointers to generic pieces of data (literally anything).
  * */
 
-#define DEBUG_TABLE
+//#define DEBUG_TABLE
 
 static bucket_t *bucket_new(char *key, void *datum, bucket_t *next, bucket_t *prev);
 static bool bucket_is_root(bucket_t *bucket);
@@ -337,7 +337,7 @@ int hashtable_size(hashtable_t *table) {
  * A simple string hash function. Returns an integer s.t x >= 0
  */
 static int hash(char *key, size_t len) {
-    int hash, i;
+    volatile int hash, i;
     for(hash = i = 0; i < len; ++i) {
         hash += key[i];
         hash += (hash << 10);

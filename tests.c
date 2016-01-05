@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "hashtable.h"
+#include <sys/time.h>
+#include "include/hashtable.h"
 
 const char *get_truth(bool assertion);
 
@@ -8,11 +9,12 @@ int main(int argc, char *argv[]) {
     
     hashtable_t *table = hashtable_new(10);
     
-    
+    struct timeval tval_before, tval_after, tval_result;
+    gettimeofday(&tval_before, NULL);
+
     printf("Running test suite:\n\n");
     hashtable_put(table, "yo", (void *)123);
     
-
     printf("Add one item -- \n");
     printf("\tSimple key fetch: %s", get_truth((long)hashtable_get(table, "yo") == 123));
 
@@ -75,20 +77,29 @@ int main(int argc, char *argv[]) {
     printf("\tKey test - kelly: %s", get_truth((long)hashtable_get(table, "kelly") == 23));
     printf("\tKey test - cara: %s", get_truth((long)hashtable_get(table, "cara") == 21));
     
-
     printf("Testing overwrite!\n");
 
     hashtable_put(table, "justin", (void *)15);
-    printf("\tKey test - justin: %s", get_truth((long)hashtable_get(table, "justin") == 15));
-
     hashtable_put(table, "david", (void *)10);
+    hashtable_put(table, "kelly", (void *)10);
+    hashtable_put(table, "cara", (void *)10);
+    hashtable_put(table, "donna", (void *)100);
+    
+    printf("\tKey test - justin: %s", get_truth((long)hashtable_get(table, "justin") == 15));
     printf("\tKey test - david: %s", get_truth((long)hashtable_get(table, "david") == 10));
-    
-    
+    printf("\tKey test - kelly: %s", get_truth((long)hashtable_get(table, "kelly") == 10));    
+    printf("\tKey test - cara: %s", get_truth((long)hashtable_get(table, "cara") == 10));
+    printf("\tKey test - donna: %s", get_truth((long)hashtable_get(table, "donna") == 100));
+
+    // Timing code.
+    gettimeofday(&tval_after, NULL);
+    timersub(&tval_after, &tval_before, &tval_result);
+
+    printf("Time elapsed: %ld.%06ld\n", (long int)tval_result.tv_sec, (long int)tval_result.tv_usec);
 }
 
-const char *true_string = "true\n";
-const char *false_string = "false\n";
+const char *true_string = "Yup\n";
+const char *false_string = "Nope lol\n";
 
 const char *get_truth(bool assertion) {
     return (assertion ? true_string : false_string);
