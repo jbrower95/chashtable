@@ -8,13 +8,16 @@ int main(int argc, char *argv[]) {
     
     hashtable_t *table = hashtable_new(10);
     
-    hashtable_put(table, "yo", (void *)123);
     
     printf("Running test suite:\n\n");
+    hashtable_put(table, "yo", (void *)123);
     
+
     printf("Add one item -- \n");
     printf("\tSimple key fetch: %s", get_truth((long)hashtable_get(table, "yo") == 123));
-    printf("\tSize validation: %s", get_truth(hashtable_size(table) == 1));
+
+    int size = hashtable_size(table);
+    printf("\tSize validation: %s (expected %d, got %d)", get_truth(1 == size), 1, size);
     
     hashtable_put(table, "justin", (void *)19);
     hashtable_put(table, "anjali", (void *)20);
@@ -41,6 +44,24 @@ int main(int argc, char *argv[]) {
     printf("\t\t Actually removed?: %s", get_truth(hashtable_get(table, "anjali") == NULL));
     printf("\t\t Actually removed?: %s", get_truth(hashtable_get(table, "emily") == NULL));
     printf("\t\t Actually removed?: %s", get_truth(hashtable_get(table, "yo") == NULL));
+
+    printf("Forcing Grow Tests\n");
+
+    hashtable_put(table, "justin", (void *)20);
+    hashtable_put(table, "stephanie", (void *)17);
+    hashtable_put(table, "kimberly", (void *)23);
+    hashtable_put(table, "donna", (void *)49);
+    hashtable_put(table, "nick", (void *)30);
+    hashtable_put(table, "harley", (void *)20);
+    hashtable_put(table, "gerard", (void *)20);
+    hashtable_put(table, "david", (void *)23);
+    hashtable_put(table, "becca", (void *)17);
+    hashtable_put(table, "kelly", (void *)23);
+    hashtable_put(table, "cara", (void *)21);
+
+    printf("\t\t Size = 11 after adds?: %s", get_truth(hashtable_size(table) == 11));
+
+
 }
 
 const char *true_string = "true\n";

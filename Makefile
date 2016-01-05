@@ -1,4 +1,4 @@
 all:
-	gcc -Wall main.c hashtable.c -o chash
+	gcc -Wall -g main.c hashtable.c -o chash
 clean:
 	rm -f chash

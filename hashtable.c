@@ -8,6 +8,17 @@
  * Used for holding pointers to generic pieces of data (literally anything).
  * */
 
+//#define DEBUG_TABLE
+
+static bucket_t *bucket_new(char *key, void *datum, bucket_t *next, bucket_t *prev);
+static bool bucket_is_root(bucket_t *bucket);
+static void bucket_destroy(bucket_t *bucket);
+static void hashtable_resize_if_necessary(hashtable_t *table);
+static void hashtable_resize(hashtable_t *table, int new_size);
+static int hash(char *key, size_t len);
+
+
+
 /**
  * Initializes the hashtable.
  * Returns A hashtable pointer on success
@@ -15,7 +26,7 @@
  * Every call to hashtable_init should have
  * a corresponding hashtable_destroy()
  */
-hashtable_t *hashtable_new(int initial_size) {
+hashtable_t *hashtable_new(size_t initial_size) {
     
     hashtable_t *table = (hashtable_t *)malloc(sizeof(hashtable_t));
     
@@ -66,7 +77,7 @@ void hashtable_destroy(hashtable_t *table) {
 /**
  * Initializes a bucket struct.
  */
-bucket_t *bucket_new(char *key, void *datum, bucket_t *next, bucket_t *prev) {
+static bucket_t *bucket_new(char *key, void *datum, bucket_t *next, bucket_t *prev) {
     
     bucket_t *bucket = (bucket_t *)malloc(sizeof(bucket_t));
     
@@ -89,12 +100,12 @@ bucket_t *bucket_new(char *key, void *datum, bucket_t *next, bucket_t *prev) {
 }
 
 // Returns true if this bucket is the first bucket in the linked list.
-bool bucket_is_root(bucket_t *bucket) {
+static bool bucket_is_root(bucket_t *bucket) {
     return (bucket->prev == NULL);
 }
 
 // Destroys a bucket -- Frees all allocated memory, and removes the bucket from its linked list.
-void bucket_destroy(bucket_t *bucket) {
+static void bucket_destroy(bucket_t *bucket) {
     // free what we malloced((
     free(bucket->key);
     
@@ -146,8 +157,6 @@ void *hashtable_get(hashtable_t *table, char *key) {
  */
 bool hashtable_remove(hashtable_t *table, char *key) {
     
-    hashtable_resize_if_necessary(table);
-    
     if (key == NULL) {
         return NULL;
     }
@@ -176,6 +185,7 @@ bool hashtable_remove(hashtable_t *table, char *key) {
             // Destroy the node
             bucket_destroy(current);
             table->count--;
+            hashtable_resize_if_necessary(table);
             return true;
         } else {
             return false;
@@ -183,11 +193,11 @@ bool hashtable_remove(hashtable_t *table, char *key) {
     }
 }
 
-void hashtable_resize(hashtable_t *table, int new_size) {
+static void hashtable_resize(hashtable_t *table, int new_size) {
     
     /* Resize the internal array to new_size */
     bucket_t **original_array = table->buckets;
-    int old_size = table->size;
+    const int old_size = table->size;
     
     /* Reset the attributes of this table to new stuff */
     table->buckets = (bucket_t **)malloc(sizeof(bucket_t) * new_size);
@@ -195,15 +205,17 @@ void hashtable_resize(hashtable_t *table, int new_size) {
     table->count = 0;
     
     /* Re insert all of the existing buckets */
-    for (int i = 0; i < old_size; i++) {
+    for (volatile int i = 0; i < old_size; i++) {
         bucket_t *current = original_array[i];
         if (current != NULL) {
             /* Insert all of the values in these buckets. */
             do {
-                printf("Inserting (%s, %d)\n", current->key, current->datum);
+                #ifdef DEBUG_TABLE
+                    printf("Inserting (%s, %p)\n", current->key, current->datum);
+                #endif
                 hashtable_put(table, current->key, current->datum);
                 bucket_t *next = current->next;
-                 bucket_destroy(current);
+                bucket_destroy(current);
                 current = next;
             } while (current != NULL);
         }
@@ -218,8 +230,6 @@ void hashtable_resize(hashtable_t *table, int new_size) {
  */
 void hashtable_put(hashtable_t *table, char *key, void *value) {
     
-    hashtable_resize_if_necessary(table);
-    
     if (key == NULL) {
         return;
     }
@@ -228,6 +238,9 @@ void hashtable_put(hashtable_t *table, char *key, void *value) {
     const int bucket = hash_value % table->size;
     
     if (table->buckets[bucket] == NULL) {
+        #ifdef DEBUG_TABLE
+            printf("Insert: Added new root bucket (slot %d).\n", bucket);
+        #endif
         table->buckets[bucket] = bucket_new(key, value, NULL, NULL);;
     } else {
         bucket_t *current = table->buckets[bucket];
@@ -235,10 +248,16 @@ void hashtable_put(hashtable_t *table, char *key, void *value) {
             
             if (strcmp(current->key, key) == 0) {
                 // We found our key: this becomes an update.
+                #ifdef DEBUG_TABLE
+                printf("Insert: Performed update.\n");
+                #endif
                 current->datum = value;
                 return;
             }
             
+            #ifdef DEBUG_TABLE
+            printf("Insert: Added new non-root bucket.");
+            #endif
             current = current->next;
         }
         
@@ -247,21 +266,26 @@ void hashtable_put(hashtable_t *table, char *key, void *value) {
     }
     
     table->count++;
+    hashtable_resize_if_necessary(table);
 }
 
 
-void hashtable_resize_if_necessary(hashtable_t *table) {
+static void hashtable_resize_if_necessary(hashtable_t *table) {
     
-    float load_factor = table->count / (float)table->size;
+    const float load_factor = table->count / (float)table->size;
     
     if (load_factor > MAX_LOAD_FACTOR) {
         // We need to ~grow~. Double our size.
-        printf("Growing hash table from %d to %d.", table->size, table->size*2);
+        #ifdef DEBUG_TABLE 
+            printf("Growing hash table from %d to %d.", table->size, table->size*2);
+        #endif
         hashtable_resize(table, table->size * 2);
     } else if (load_factor < MIN_LOAD_FACTOR && table->size > MIN_SIZE) {
         // We need to ~shrink~. Half our size.
         int new_size = (table->size / 2) < MIN_SIZE ? MIN_SIZE : (table->size / 2);
-        printf("Shrinking hash table from %d to %d\n.", table->size, new_size);
+        #ifdef DEBUG_TABLE 
+            printf("Shrinking hash table from %d to %d\n.", table->size, new_size);
+        #endif
         hashtable_resize(table, new_size);
     }
 }
@@ -273,9 +297,9 @@ int hashtable_size(hashtable_t *table) {
 }
 
 /**
- * A simple string hash function.
+ * A simple string hash function. Returns an integer s.t x >= 0
  */
-int hash(char *key, int len) {
+static int hash(char *key, size_t len) {
     int hash, i;
     for(hash = i = 0; i < len; ++i) {
         hash += key[i];
@@ -285,7 +309,7 @@ int hash(char *key, int len) {
     hash += (hash << 3);
     hash ^= (hash >> 11);
     hash += (hash << 15);
-    return hash;
+    return abs(hash);
 }
 
 
