@@ -16,7 +16,6 @@ static void bucket_destroy(bucket_t *bucket);
 static void hashtable_resize_if_necessary(hashtable_t *table);
 static void hashtable_resize(hashtable_t *table, int new_size);
 static int hash(char *key, size_t len);
-
 static void __hashtable_put(hashtable_t *table, char *key, void *value);
 static void hashtable_insert(hashtable_t *table, char *key, void *value, bool resize);
 
