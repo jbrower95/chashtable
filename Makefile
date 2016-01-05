@@ -1,9 +1,9 @@
 
 all: hashtable tests
-hashtable:
-	gcc -Wall -g -O -c hashtable.c 	
-tests: hashtable
-	gcc -Wall -g -c main.c -o tests.o
+hashtable: hashtable.c
+	gcc -Wall -g -O0 -c hashtable.c 	
+tests: hashtable main.c
+	gcc -Wall -g -O0 -c main.c -o tests.o
 	gcc tests.o hashtable.o -o tests
 save:
 	git commit -a 

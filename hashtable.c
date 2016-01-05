@@ -16,8 +16,8 @@ static void bucket_destroy(bucket_t *bucket);
 static void hashtable_resize_if_necessary(hashtable_t *table);
 static void hashtable_resize(hashtable_t *table, int new_size);
 static int hash(char *key, size_t len);
-static void __hashtable_put(hashtable_t *table, char *key, void *value);
-static void hashtable_insert(hashtable_t *table, char *key, void *value, bool resize);
+static bool __hashtable_put(hashtable_t *table, char *key, void *value);
+static bool hashtable_insert(hashtable_t *table, char *key, void *value, bool resize);
 
 /**
  * Initializes the hashtable.
@@ -77,7 +77,7 @@ void hashtable_destroy(hashtable_t *table) {
 /**
  * Initializes a bucket struct. Returns NULL if the bucket couldn't be created.
  */
-static bucket_t *bucket_new(char *key, void *datum, bucket_t *next, bucket_t *prev) {
+static bucket_t *bucket_new(char *key, void *datum, bucket_t *prev, bucket_t *next) {
     
     bucket_t *bucket = (bucket_t *)malloc(sizeof(bucket_t));
     
@@ -212,7 +212,7 @@ static void hashtable_resize(hashtable_t *table, int new_size) {
     const int old_size = table->size;
     
     /* Reset the attributes of this table to new stuff */
-    table->buckets = (bucket_t **)calloc(sizeof(bucket_t) * new_size, 1);
+    table->buckets = (bucket_t **)calloc(sizeof(bucket_t), new_size);
     table->size = new_size;
     table->count = 0;
     
@@ -225,7 +225,7 @@ static void hashtable_resize(hashtable_t *table, int new_size) {
                 #ifdef DEBUG_TABLE
                     printf("Inserting (%s, %p)\n", current->key, current->datum);
                 #endif
-                hashtable_put(table, current->key, current->datum);
+                __hashtable_put(table, current->key, current->datum);
                 bucket_t *next = current->next;
                 bucket_destroy(current);
                 current = next;
@@ -238,24 +238,24 @@ static void hashtable_resize(hashtable_t *table, int new_size) {
 }
 
 /* Internal insertion method to get past*/
-static void hashtable_insert(hashtable_t *table, char *key, void *value, bool resize) {
-    __hashtable_put(table, key, value);
+static bool hashtable_insert(hashtable_t *table, char *key, void *value, bool resize) {
+    const bool result = __hashtable_put(table, key, value);
     if (resize) {
         hashtable_resize_if_necessary(table);
     }
+    return result;
 }
 
-void hashtable_put(hashtable_t *table, char *key, void *value) {
-    hashtable_insert(table, key, value, true);
+bool hashtable_put(hashtable_t *table, char *key, void *value) {
+    return hashtable_insert(table, key, value, true);
 }
 
 /**
  * Inserts a value into the hashtable.
  */
-static void __hashtable_put(hashtable_t *table, char *key, void *value) {
-    
+static bool __hashtable_put(hashtable_t *table, char *key, void *value) {
     if (key == NULL) {
-        return;
+        return false;
     }
     
     const int hash_value = hash(key, strlen(key));
@@ -265,31 +265,39 @@ static void __hashtable_put(hashtable_t *table, char *key, void *value) {
         #ifdef DEBUG_TABLE
             printf("Insert: Added new root bucket (slot %d).\n", bucket);
         #endif
-        table->buckets[bucket] = bucket_new(key, value, NULL, NULL);;
+        table->buckets[bucket] = bucket_new(key, value, NULL, NULL);
+        if (!table->buckets[bucket]) {
+            // OOM. New bucket failed.
+            return false;
+        }
     } else {
         bucket_t *current = table->buckets[bucket];
         while (current->next != NULL) {
-            
             if (strcmp(current->key, key) == 0) {
                 // We found our key: this becomes an update.
                 #ifdef DEBUG_TABLE
                 printf("Insert: Performed update.\n");
                 #endif
                 current->datum = value;
-                return;
+                return true;
             }
-            
-            #ifdef DEBUG_TABLE
-            printf("Insert: Added new non-root bucket.");
-            #endif
+
             current = current->next;
         }
         
+        #ifdef DEBUG_TABLE
+        printf("Insert: Added new non-root bucket.\n");
+        #endif
         // We need to append onto current -- we got to the end of the list.
         current->next = bucket_new(key, value, current, NULL);
+        if (!current->next) {
+            // OOM  
+            return false;
+        }
     }
     
     table->count++;
+    return true;
 }
 
 
@@ -323,7 +331,10 @@ int hashtable_size(hashtable_t *table) {
  * A simple string hash function. Returns an integer s.t x >= 0
  */
 static int hash(char *key, size_t len) {
-    int hash, i;
+
+    return 1;
+
+    /*int hash, i;
     for(hash = i = 0; i < len; ++i) {
         hash += key[i];
         hash += (hash << 10);
@@ -332,7 +343,7 @@ static int hash(char *key, size_t len) {
     hash += (hash << 3);
     hash ^= (hash >> 11);
     hash += (hash << 15);
-    return abs(hash);
+    return abs(hash);*/
 }
 
 
