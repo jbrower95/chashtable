@@ -17,7 +17,8 @@ static void hashtable_resize_if_necessary(hashtable_t *table);
 static void hashtable_resize(hashtable_t *table, int new_size);
 static int hash(char *key, size_t len);
 
-
+static void __hashtable_put(hashtable_t *table, char *key, void *value);
+static void hashtable_insert(hashtable_t *table, char *key, void *value, bool resize);
 
 /**
  * Initializes the hashtable.
@@ -28,7 +29,7 @@ static int hash(char *key, size_t len);
  */
 hashtable_t *hashtable_new(size_t initial_size) {
     
-    hashtable_t *table = (hashtable_t *)malloc(sizeof(hashtable_t));
+    hashtable_t *table = (hashtable_t *)calloc(sizeof(hashtable_t), 1);
     
     if (table == NULL) {
         return NULL;
@@ -40,7 +41,7 @@ hashtable_t *hashtable_new(size_t initial_size) {
     }
     
     /* Perform initial allocation of buckets. */
-    table->buckets = malloc(sizeof(bucket_t) * initial_size);
+    table->buckets = calloc(sizeof(bucket_t) * initial_size, 1);
     
     if (table->buckets == NULL) {
         free(table);
@@ -75,15 +76,27 @@ void hashtable_destroy(hashtable_t *table) {
 
 
 /**
- * Initializes a bucket struct.
+ * Initializes a bucket struct. Returns NULL if the bucket couldn't be created.
  */
 static bucket_t *bucket_new(char *key, void *datum, bucket_t *next, bucket_t *prev) {
     
     bucket_t *bucket = (bucket_t *)malloc(sizeof(bucket_t));
     
+    if (bucket == NULL) {
+        // Out of memory.
+        return NULL;
+    }
+
     bucket->datum = datum;
     
     bucket->key = malloc(sizeof(char) * (strlen(key) + 1));
+
+    if (bucket->key == NULL) {
+        // Out of memory.
+        free(bucket);
+        return NULL;
+    }
+
     bucket->datum = datum;
     
     memcpy(bucket->key, key, strlen(key) + 1);
@@ -200,7 +213,7 @@ static void hashtable_resize(hashtable_t *table, int new_size) {
     const int old_size = table->size;
     
     /* Reset the attributes of this table to new stuff */
-    table->buckets = (bucket_t **)malloc(sizeof(bucket_t) * new_size);
+    table->buckets = (bucket_t **)calloc(sizeof(bucket_t) * new_size, 1);
     table->size = new_size;
     table->count = 0;
     
@@ -225,10 +238,22 @@ static void hashtable_resize(hashtable_t *table, int new_size) {
     free(original_array);
 }
 
+/* Internal insertion method to get past*/
+static void hashtable_insert(hashtable_t *table, char *key, void *value, bool resize) {
+    __hashtable_put(table, key, value);
+    if (resize) {
+        hashtable_resize_if_necessary(table);
+    }
+}
+
+void hashtable_put(hashtable_t *table, char *key, void *value) {
+    hashtable_insert(table, key, value, true);
+}
+
 /**
  * Inserts a value into the hashtable.
  */
-void hashtable_put(hashtable_t *table, char *key, void *value) {
+static void __hashtable_put(hashtable_t *table, char *key, void *value) {
     
     if (key == NULL) {
         return;
@@ -266,7 +291,6 @@ void hashtable_put(hashtable_t *table, char *key, void *value) {
     }
     
     table->count++;
-    hashtable_resize_if_necessary(table);
 }
 
 
