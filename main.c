@@ -60,8 +60,31 @@ int main(int argc, char *argv[]) {
     hashtable_put(table, "cara", (void *)21);
 
     printf("\t\t Size = 11 after adds?: %s", get_truth(hashtable_size(table) == 11));
+    printf("\tKey test - justin: %s", get_truth((long)hashtable_get(table, "justin") == 20));
+    printf("\tKey test - stephanie: %s", get_truth((long)hashtable_get(table, "stephanie") == 17));
+    printf("\tKey test - kimberly: %s", get_truth((long)hashtable_get(table, "kimberly") == 23));
 
+    printf("\tKey test - donna: %s", get_truth((long)hashtable_get(table, "donna") == 49));
+    printf("\tKey test - nick: %s", get_truth((long)hashtable_get(table, "nick") == 30));
+    printf("\tKey test - harley: %s", get_truth((long)hashtable_get(table, "harley") == 20));
 
+    printf("\tKey test - gerard: %s", get_truth((long)hashtable_get(table, "gerard") == 20));
+    printf("\tKey test - david: %s", get_truth((long)hashtable_get(table, "david") == 23));
+    printf("\tKey test - becca: %s", get_truth((long)hashtable_get(table, "becca") == 17));
+    
+    printf("\tKey test - kelly: %s", get_truth((long)hashtable_get(table, "kelly") == 23));
+    printf("\tKey test - cara: %s", get_truth((long)hashtable_get(table, "cara") == 21));
+    
+
+    printf("Testing overwrite!\n");
+
+    hashtable_put(table, "justin", (void *)15);
+    printf("\tKey test - justin: %s", get_truth((long)hashtable_get(table, "justin") == 15));
+
+    hashtable_put(table, "david", (void *)10);
+    printf("\tKey test - david: %s", get_truth((long)hashtable_get(table, "david") == 10));
+    
+    
 }
 
 const char *true_string = "true\n";
